@@ -1,4 +1,4 @@
-from random_forest_decision_tree import player_name_map
+from random_forest import player_name_map
 import pandas as pd
 import numpy as np 
 
