@@ -1,29 +1,34 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[15]:
 
 
 import pandas as pd 
+import os
 
-df = pd.read_csv('/Users/parth/coding/python/sportly/stats/tennis_atp/singles/atp_matches_net.csv')
-df
+curr_dir = os.getcwd()
+
+parent_dir = os.path.dirname(curr_dir) # gtes the name of the parent directory
+
+singles_net_stats_path = os.path.join(parent_dir, 'stats', 'singles_net_stats', 'singles_net_stats.csv')
+df = pd.read_csv(singles_net_stats_path)
 
 
-# In[2]:
+# In[16]:
 
 
 df.head()
 
 
-# In[3]:
+# In[17]:
 
 
 from sklearn.preprocessing import LabelEncoder
 from collections import defaultdict
 
 
-# In[4]:
+# In[18]:
 
 
 str_vals = ['tourney_name', 'surface','tourney_level','winner_hand','winner_ioc','loser_hand','loser_ioc','round','winner_name','loser_name','winner_entry','loser_entry']
@@ -35,7 +40,7 @@ for variable_name in str_vals:
     label_encoder_variables.append(globals()[var_name])
 
 
-# In[5]:
+# In[19]:
 
 
 for i in range(len(str_vals)):
@@ -46,7 +51,7 @@ for i in range(len(str_vals)):
             player_name_map.update(dict(zip(encoded_number, df[str_vals[i]]))) # pair encoder + winner_player_name
 
 
-# In[6]:
+# In[20]:
 
 
 # drop str value columns plus winner name and loser name
@@ -60,13 +65,13 @@ for col in str_vals:
 df.head()
 
 
-# In[7]:
+# In[21]:
 
 
 player_name_map
 
 
-# In[8]:
+# In[22]:
 
 
 # rank diff --> negative = loser rank points > winner rank points --> positive = winner rank points > loser rank points
@@ -74,26 +79,25 @@ df['rank_points_diff'] = df['winner_rank_points'] - df['loser_rank_points']
 df
 
 
-# In[9]:
+# In[23]:
 
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
-import xgboost as xgb
 import numpy as np
 import warnings
-
+import joblib
 warnings.filterwarnings('ignore')
 
 
-# In[10]:
+# In[24]:
 
 
 df
 
 
-# In[11]:
+# In[25]:
 
 
 y = df['winner_name_n']
@@ -105,55 +109,32 @@ X = df[X]
 X
 
 
-# In[12]:
+# In[26]:
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-xgb_train = xgb.DMatrix(X_train, y_train, enable_categorical=True)
-xgb_test = xgb.DMatrix(X_test, y_test, enable_categorical=True)
-
-
-# In[20]:
-
-
-random_forest_classifier = RandomForestClassifier(n_estimators=100,criterion='entropy',max_depth=12,n_jobs=1,random_state=42)
-
-
-# In[21]:
-
-
-X_train
+def train_model():
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    random_forest_classifier = RandomForestClassifier(n_estimators=100,criterion='entropy',max_depth=13,n_jobs=1,random_state=42)
+    random_forest_classifier.fit(X_train,y_train)
+    joblib.dump(random_forest_classifier, 'rf_model.pkl')
+    return random_forest_classifier
 
 
 # In[ ]:
 
 
-random_forest_classifier.fit(X_train,y_train)
+if __name__ == "__main__":
+    train_model()
 
 
-# In[16]:
+# In[ ]:
 
 
-y_pred_random_forest = random_forest_classifier.predict(X_test)
+df.to_csv(singles_net_stats_path)
 
 
-# In[17]:
+# In[ ]:
 
 
-y_pred_random_forest
 
-
-# In[18]:
-
-
-accuracy = accuracy_score(y_test, y_pred_random_forest)
-classification_rep = classification_report(y_test,y_pred_random_forest)
-
-
-# In[19]:
-
-
-print('accuracy for random forest = ' + str(accuracy))
-print('classification report' + str(classification_rep))
-df.to_csv('/Users/parth/coding/python/sportly/stats/tennis_atp/singles/atp_matches_net.csv')
 
