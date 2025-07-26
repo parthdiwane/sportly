@@ -24,3 +24,17 @@ model_path = hf_hub_download(
 )
 
 model = joblib.load(model_path)
+
+def find_winner(p1: str, p2: str):
+    arr = find_matches(p1,p2)
+    df1, df2 = arr[0], arr[1]
+    
+    probability_p1 = model.predict([df1])
+    probability_p2 = model.predict([df2])
+
+    if probability_p1 > probability_p2:
+        return "player 1: " + str(probability_p1)
+    else:
+        return "player 2: " + str(probability_p2)
+
+find_winner('Roger Federer', 'Carlos Alcaraz')
