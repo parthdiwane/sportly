@@ -16,20 +16,16 @@ def find_matches(player1: str, player2: str):
     os.chdir('../')
     os.chdir(os.getcwd() + '/stats/singles_net_stats')
     singles_net_stats_path = os.getcwd() + '/singles_net_stats.csv'
+
     for i in range(2):
         os.chdir('../')
     os.chdir(os.getcwd() + '/scripts_main')
 
     df_net = pd.read_csv(singles_net_stats_path)
-    df_player1 = pd.DataFrame()
-    df_player2 = pd.DataFrame()
 
-    player1_stats = df_player1[(df_net['winner_name_n'] == p1) | (df_net['loser_name_n'] == p1)]
-    player2_stats = df_player2[(df_net['winner_name_n'] == p2) | (df_net['loser_name_n'] == p2)]
+    player1_stats = df_net[(df_net['winner_name_n'] == p1) | (df_net['loser_name_n'] == p1)]
+    player2_stats = df_net[(df_net['winner_name_n'] == p2) | (df_net['loser_name_n'] == p2)]
+
     
     
-    
-    return [df_player1,df_player2]
-
-
-print(find_matches('Roger Federer', 'Carlos Alcaraz'))
+    return [player1_stats,player2_stats]
