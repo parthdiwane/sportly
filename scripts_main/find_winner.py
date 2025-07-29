@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd 
-from get_matches import *
 import os 
 from huggingface_hub import hf_hub_download
 import joblib 
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from tree.random_forest import build_player_name_map
+
 
 # for reading csv file
 os.chdir('../')
 os.chdir(os.getcwd() + '/stats/singles_net_stats')
-csv_path = os.getcwd() + '/singles_net_stats.csv'
+csv_path = os.getcwd() + '/singles_net_stats2.csv'
 
 
 df = pd.read_csv(csv_path)
@@ -26,23 +31,13 @@ model_path = hf_hub_download(
 model = joblib.load(model_path)
 
 def find_winner(p1: str, p2: str):
-    arr = find_matches(p1,p2)
-    df1, df2 = arr[0], arr[1]
-
-    df1 = df1[model.feature_names_in_].fillna(0)
-    df2 = df2[model.feature_names_in_].fillna(0)
-
-
     trained_feature_names = model.feature_names_in_
-    print(df2[trained_feature_names].T)
+    player_name_map = build_player_name_map()
+    num_p1, num_p2 = player_name_map[p1], player_name_map[p2]
 
-    probability_p1 = model.predict_proba(df1[trained_feature_names])[0][1]
-    probability_p2 = model.predict_proba(df2[trained_feature_names])[0][1]
+    df1 = df[(df['winner_name_n'] == num_p1) | (df['loser_name_n'] == num_p1)]
+    df2 = df[(df['winner_name_n'] == num_p2) | (df['loser_name_n'] == num_p2)]
 
-
-    if probability_p1 > probability_p2:
-        print(p1 + ": " + str(probability_p1))
-    else:
-        print(p2 + ": " + str(probability_p2))
+    print(model.classes_)
 
 find_winner('Roger Federer', 'Carlos Alcaraz')
