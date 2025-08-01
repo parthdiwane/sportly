@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[17]:
+# In[1]:
 
 
 import pandas as pd
@@ -15,14 +15,14 @@ singles_net_stats_path = os.path.join(parent_dir, 'stats', 'singles_net_stats', 
 df = pd.read_csv(singles_net_stats_path)
 
 
-# In[18]:
+# In[2]:
 
 
 from sklearn.preprocessing import LabelEncoder
 from collections import defaultdict
 
 
-# In[19]:
+# In[3]:
 
 
 # columns that need to be encoded
@@ -35,13 +35,13 @@ for variable_name in str_vals:
     label_encoder_variables.append(globals()[var_name])
 
 
-# In[20]:
+# In[4]:
 
 
 label_encoder_variables
 
 
-# In[21]:
+# In[5]:
 
 
 # 1
@@ -53,13 +53,13 @@ def encode():
     df.to_csv(singles_net_stats_path)
 
 
-# In[22]:
+# In[6]:
 
 
 encode()
 
 
-# In[23]:
+# In[7]:
 
 
 # 2
@@ -75,7 +75,7 @@ def build_player_name_map():
     return player_name_map
 
 
-# In[24]:
+# In[8]:
 
 
 # 3 
@@ -91,7 +91,7 @@ def drop_cols():
                     df = df.drop(['winner_rank','loser_rank','score','Unnamed: 0.1','Unnamed: 0'],axis='columns')
 
 
-# In[26]:
+# In[9]:
 
 
 # rank diff --> negative = loser rank points > winner rank points --> positive = winner rank points > loser rank points
@@ -99,7 +99,7 @@ df['rank_points_diff'] = df['winner_rank_points'] - df['loser_rank_points']
 df
 
 
-# In[27]:
+# In[10]:
 
 
 from sklearn.model_selection import train_test_split
@@ -111,7 +111,7 @@ import joblib
 warnings.filterwarnings('ignore')
 
 
-# In[29]:
+# In[11]:
 
 
 y = df['winner_name_n']
@@ -123,7 +123,7 @@ X = df[X]
 X.drop(str_vals,axis='columns')
 
 
-# In[30]:
+# In[12]:
 
 
 # 4
@@ -131,17 +131,27 @@ def train_model():
     global X
     global y
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    random_forest_classifier = RandomForestClassifier(n_estimators=100,criterion='entropy',max_depth=13,n_jobs=1,random_state=42)
+    random_forest_classifier = RandomForestClassifier(n_estimators=100,criterion='entropy',max_depth=10,n_jobs=1,random_state=42, oob_score=True)
     random_forest_classifier.fit(X_train,y_train)
-    joblib.dump(random_forest_classifier, 'rf_model.pkl')
+    joblib.dump(random_forest_classifier, 'rf1_model.pkl')
+
     return random_forest_classifier
 
 
-# In[ ]:
+# In[14]:
 
 
 if __name__ == "__main__":
-    train_model()
+    encode()
+    build_player_name_map()
+    model = train_model()
+
+    oob_score = model.oob_score_
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'oob score {oob_score}')
+    print(f'accuracy score {accuracy}')
+
 
 
 # In[ ]:

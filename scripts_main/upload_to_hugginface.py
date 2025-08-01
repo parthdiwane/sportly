@@ -15,6 +15,12 @@ upload_file(
     repo_id='parthdiwane/sportly-random-forest',
     repo_type='model'
 )
+upload_file(
+    path_or_fileobj='rf1_model.pkl',
+    path_in_repo='rf1_model.pkl',
+    repo_id='parthdiwane/sportly-random-forest',
+    repo_type='model'
+)
 
 os.chdir('../')
 os.chdir(os.getcwd() + '/scripts_main')
