@@ -35,18 +35,8 @@ def find_winner(p1: str, p2: str):
     player_name_map = build_player_name_map()
     num_p1, num_p2 = player_name_map[p1], player_name_map[p2]
 
-    df1 = df[
-        (df['p1'] == num_p1) & 
-        (df['p2'] == num_p2)
-    ]
-
-    df2 = df[
-        (df['p1'] == num_p2) & 
-        (df['p2'] == num_p1)
-    ]
 
     print(df1)
-    print('\n')
-    print(df2)
+   
 
 find_winner('Carlos Costa', 'Thomas Muster')
