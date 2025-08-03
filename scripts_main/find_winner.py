@@ -48,9 +48,9 @@ def find_winner(p1: str, p2: str):
     p_i = p_i.mean()
     p_j = p_j.mean()
 
-    # bradley terry model bc its pairwise
+    # apply bradley terry model 
     
-    bt = (p_i) / (p_i + p_j)
+    bt = (p_i) / (p_i + p_j) # bradley terry model, 1 - bt = P(p2 win)
     
     print(f'Chance {p1} wins is {bt}')
     print('\n')
