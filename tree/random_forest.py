@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[42]:
 
 
 import pandas as pd
@@ -15,14 +15,14 @@ singles_net_stats_path = os.path.join(parent_dir, 'stats', 'singles_net_stats', 
 df = pd.read_csv(singles_net_stats_path)
 
 
-# In[3]:
+# In[43]:
 
 
 from sklearn.preprocessing import LabelEncoder
 from collections import defaultdict
 
 
-# In[4]:
+# In[44]:
 
 
 # columns that need to be encoded
@@ -35,18 +35,17 @@ for variable_name in str_vals:
     label_encoder_variables.append(globals()[var_name])
 
 
-# In[5]:
+# In[45]:
 
 
 label_encoder_variables
 
 
-# In[6]:
+# In[46]:
 
 
 # 1
 def encode():
-    global df
     for i in range(len(str_vals)):
         if str_vals[i] in df.columns:
             encoded_number = label_encoder_variables[i].fit_transform(df[str_vals[i]]) # encodes each needed column --> type df
@@ -54,16 +53,11 @@ def encode():
     df.to_csv(singles_net_stats_path)
 
 
-# In[7]:
-
-
-
-# In[8]:
+# In[47]:
 
 
 # 2
 def build_player_name_map():
-    global df
     player_name_map = defaultdict(int)
 
     winners = zip(df['winner_name'], df['winner_name_n'])
@@ -75,14 +69,14 @@ def build_player_name_map():
     return player_name_map
 
 
-# In[ ]:
+# In[48]:
 
 
 encode()
 build_player_name_map()
 
 
-# In[9]:
+# In[49]:
 
 
 # 3 
@@ -98,7 +92,7 @@ def drop_cols():
                     df = df.drop(['winner_rank','loser_rank','score','Unnamed: 0.1','Unnamed: 0'],axis='columns')
 
 
-# In[10]:
+# In[50]:
 
 
 # rank diff --> negative = loser rank points > winner rank points --> positive = winner rank points > loser rank points
@@ -106,7 +100,7 @@ df['rank_points_diff'] = df['winner_rank_points'] - df['loser_rank_points']
 df
 
 
-# In[11]:
+# In[51]:
 
 
 from sklearn.model_selection import train_test_split
@@ -118,14 +112,15 @@ import joblib
 warnings.filterwarnings('ignore')
 
 
-# In[12]:
+# In[52]:
 
 
-X = df.drop(columns=[*str_vals, 'winner_name_n', 'score', 'Unnamed: 0', 'Unnamed: 0.1', 'loser_name_n'], errors='ignore')
-y = df['winner_name_n']
+df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+X = df.drop(columns=[*str_vals, 'winner_name_n', 'score', 'loser_name_n'], errors='ignore')
+y = df['winner_p1']
 
 
-# In[13]:
+# In[53]:
 
 
 # 4
@@ -135,35 +130,34 @@ def train_model():
     global y
     random_forest_classifier = RandomForestClassifier(n_estimators=110,criterion='entropy',max_depth=15,n_jobs=1,random_state=42, oob_score=True)
     random_forest_classifier.fit(X_train,y_train)
-    joblib.dump(random_forest_classifier, 'rf_bin_model.pkl')
+    joblib.dump(random_forest_classifier, 'rf1_bin_model.pkl')
 
     return random_forest_classifier
 
 
-# In[14]:
+# In[54]:
 
 
 model = None
 if __name__ == "__main__":
     encode()
     build_player_name_map()
-    model = train_model()    
+    model = train_model()   
     oob_score = model.oob_score_
-
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
     print(f'oob score {oob_score}')
-    print(f'accuracy score {accuracy}')
+    print(f'accuracy score {accuracy}') 
 
 
-# In[15]:
+# In[55]:
 
 
 
 
 
-# In[16]:
+# In[56]:
 
 
 df

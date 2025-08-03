@@ -25,7 +25,7 @@ os.chdir(os.getcwd() + '/scripts_main')
 
 model_path = hf_hub_download(
     repo_id='parthdiwane/sportly-random-forest',
-    filename='rf_bin_model.pkl'
+    filename='rf1_bin_model.pkl'
 )
 
 model = joblib.load(model_path)
@@ -36,7 +36,30 @@ def find_winner(p1: str, p2: str):
     num_p1, num_p2 = player_name_map[p1], player_name_map[p2]
 
 
-    print(df1)
-   
+    df1 = df[(df['p1'] == num_p1)]
+    df2 = df[(df['p1'] == num_p2)]
 
-find_winner('Carlos Costa', 'Thomas Muster')
+
+    # prob p1 wins
+    p_i = model.predict_proba(df1[trained_feature_names])[:,1]
+    p_j = model.predict_proba(df2[trained_feature_names])[:,1]
+
+    # mean probability 
+    p_i = p_i.mean()
+    p_j = p_j.mean()
+
+    # bradley terry model bc its pairwise
+    
+    bt = (p_i) / (p_i + p_j)
+    
+    print(f'Chance {p1} wins is {bt}')
+    print('\n')
+    print(f'Chance {p2} wins is {1 - bt}')
+
+    if 1 - bt > bt:
+        return p2
+    else:
+        return p1
+    
+
+print(find_winner('Carlos Costa', 'Thomas Muster'))
