@@ -6,9 +6,15 @@ export default function TennisPredictor() {
   const [player2, setPlayer2] = useState('');
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [availablePlayers, setAvailablePlayers] = useState([]);
+  const [playersLoading, setPlayersLoading] = useState(true);
 
-  // Sample tennis players - you can replace with your actual data
-  const players = [
+  // API base URL - adjust this to match your Flask server
+  const API_BASE_URL = 'http://localhost:5001';
+
+  // Sample tennis players as fallback - you can replace with your actual data
+  const fallbackPlayers = [
     'Novak Djokovic',
     'Carlos Alcaraz',
     'Jannik Sinner',
@@ -25,32 +31,77 @@ export default function TennisPredictor() {
     'Hubert Hurkacz',
   ].sort();
 
-  const handlePredict = () => {
+  // Fetch available players from the API
+  const fetchPlayers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/players`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailablePlayers(data.players);
+      } else {
+        console.warn('Failed to fetch players from API, using fallback list');
+        setAvailablePlayers(fallbackPlayers);
+      }
+    } catch (error) {
+      console.warn('Error fetching players from API, using fallback list:', error);
+      setAvailablePlayers(fallbackPlayers);
+    } finally {
+      setPlayersLoading(false);
+    }
+  };
+
+  // Load players when component mounts
+  useState(() => {
+    fetchPlayers();
+  }, []);
+
+  const handlePredict = async () => {
     if (!player1 || !player2 || player1 === player2) return;
     
     setLoading(true);
+    setError(null);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      // Mock prediction logic - replace with your actual model
-      const confidence = Math.random() * 30 + 55; // 55-85% confidence
-      const winner = Math.random() > 0.5 ? player1 : player2;
-      
-      setPrediction({
-        winner,
-        confidence: confidence.toFixed(1),
-        player1Prob: winner === player1 ? confidence : 100 - confidence,
-        player2Prob: winner === player2 ? confidence : 100 - confidence
+    try {
+      const response = await fetch(`${API_BASE_URL}/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          player1: player1,
+          player2: player2
+        })
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        setPrediction({
+          winner: result.winner,
+          confidence: result.confidence,
+          player1Prob: result.player1_prob,
+          player2Prob: result.player2_prob
+        });
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to get prediction');
+      }
+    } catch (error) {
+      console.error('Error making prediction:', error);
+      setError('Failed to connect to prediction service. Please try again.');
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const resetPrediction = () => {
     setPlayer1('');
     setPlayer2('');
     setPrediction(null);
+    setError(null);
   };
+
+  // Use available players or fallback
+  const players = availablePlayers.length > 0 ? availablePlayers : fallbackPlayers;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -59,9 +110,9 @@ export default function TennisPredictor() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center gap-3">
             <Trophy className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Tennis Match Predictor</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Match Point</h1>
           </div>
-          <p className="text-gray-600 mt-1">AI-powered tennis match outcome prediction</p>
+          <p className="text-gray-600 mt-1">Calculated Wins. Every. Time.</p>
         </div>
       </header>
 
@@ -83,9 +134,10 @@ export default function TennisPredictor() {
                 <select
                   value={player1}
                   onChange={(e) => setPlayer1(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900"
+                  disabled={playersLoading}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 disabled:bg-gray-100"
                 >
-                  <option value="">Select a player</option>
+                  <option value="">{playersLoading ? 'Loading players...' : 'Select a player'}</option>
                   {players.filter(p => p !== player2).map(player => (
                     <option key={player} value={player}>{player}</option>
                   ))}
@@ -103,9 +155,10 @@ export default function TennisPredictor() {
                 <select
                   value={player2}
                   onChange={(e) => setPlayer2(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900"
+                  disabled={playersLoading}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 disabled:bg-gray-100"
                 >
-                  <option value="">Select a player</option>
+                  <option value="">{playersLoading ? 'Loading players...' : 'Select a player'}</option>
                   {players.filter(p => p !== player1).map(player => (
                     <option key={player} value={player}>{player}</option>
                   ))}
@@ -119,7 +172,7 @@ export default function TennisPredictor() {
           <div className="flex gap-3">
             <button
               onClick={handlePredict}
-              disabled={!player1 || !player2 || player1 === player2 || loading}
+              disabled={!player1 || !player2 || player1 === player2 || loading || playersLoading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
             >
               {loading ? (
@@ -138,6 +191,14 @@ export default function TennisPredictor() {
               Reset
             </button>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="text-red-800 font-medium">Error</div>
+              <div className="text-red-600 text-sm mt-1">{error}</div>
+            </div>
+          )}
 
           {/* Prediction Results */}
           {prediction && (
@@ -192,7 +253,7 @@ export default function TennisPredictor() {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <User className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">About the Author</h2>
+            <h2 className="text-xl font-semibold text-gray-900">About the Author/Model</h2>
           </div>
 
           <div className="prose max-w-none text-gray-600">
@@ -200,9 +261,7 @@ export default function TennisPredictor() {
               hey! im parth and im am an incoming freshman at ucsb studying ce. im interested in ai/ml, statistics, chip design (don't know much about it though), and quantum computing.
               besides academic stuff, i like going to the gym, playing badminton, watching anime (watching bleach rn), and haning out w/ friends and family. 
             </p>
-          
-            <h3 className="text-lg font-semibold text-gray-900 mt-8 mb-4">How the Model Works</h3>
-
+            
             <p className="mb-4">
               The model analyzes multiple factors such as:
             </p>
@@ -216,17 +275,24 @@ export default function TennisPredictor() {
             </ul>
 
             <p className="mb-4">
+              Built with a passion for both tennis and data science, this tool aims to provide tennis 
+              enthusiasts with data-driven insights into match outcomes. While no prediction model can 
+              be 100% accurate due to the inherent unpredictability in sports, this system strives to 
+              offer the most informed predictions possible based on available data.
+            </p>
+
+            <h3 className="text-lg font-semibold text-gray-900 mt-8 mb-4">How the Model Works</h3>
+            
+            <p className="mb-4">
               This is a decision tree model and uses a <strong className="text-red-600">random forest algorithm</strong>. It throws the players stats into its decision nodes and probabilities are outputted using a majority vote.
               But, the model does a pairwise comparison of <strong>all</strong> matches that a given player has played. So the output of a predict function isn't the real chance that player 1 beats player 2. Thus we apply a <a href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model" className="text-blue-600 underline hover:text-blue-700">Bradley-Terry</a> model to get the <strong>actual</strong> chance that player 1 beats player 2.
               To find the chance that player 2 beats player 1, all we do is 1 - P(player 1 wins). Then output the one with the higher probability of winning.
             </p>
-            
-  
 
             <div className="bg-gray-50 rounded-lg p-4 mt-6">
               <p className="text-sm text-gray-600 italic">
-                "Discovery over Divulgence" 
-                - Unknown
+                "Pause and Ponder" 
+                - 3b1b
               </p>
             </div>
           </div>
@@ -241,7 +307,7 @@ export default function TennisPredictor() {
           
           <div className="flex justify-center items-center gap-6">
             <a 
-              href="https://github.com/parthdiwane/sportly" 
+              href="https://github.com/yourghubusername" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
@@ -252,7 +318,7 @@ export default function TennisPredictor() {
             </a>
 
             <a 
-              href="https://www.linkedin.com/in/parth-diwane-497793254/" 
+              href="https://linkedin.com/in/yourlinkedinusername" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
@@ -263,7 +329,7 @@ export default function TennisPredictor() {
             </a>
 
             <a 
-              href="mailto:parthdiwane@ucsb.edu" 
+              href="mailto:your.email@example.com" 
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
             >
               <svg className="w-6 h-6 text-blue-600 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,8 +344,8 @@ export default function TennisPredictor() {
       <footer className="bg-white border-t mt-12">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="text-center text-gray-500 text-sm">
-            <p>© 2025 Tennis Match Predictor. Built with React and Tailwind CSS.</p>
-            <p className="mt-1">Predictions are for entertainment purposes and should not be used for betting.</p>
+            <p>© 2025 Match Point</p>
+            <p className="mt-1">Predictions are for <b>entertainment purposes only</b> and should not be used for betting.</p>
           </div>
         </div>
       </footer>

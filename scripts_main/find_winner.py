@@ -62,4 +62,4 @@ def find_winner(p1: str, p2: str):
         return p1
     
 
-print(find_winner('Carlos Costa', 'Thomas Muster'))
+print(find_winner('Carlos Costa', 'Marcos Saliola'))
