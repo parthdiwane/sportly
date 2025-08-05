@@ -10,13 +10,43 @@ import sys
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all domains
 
-# Add the parent directory to the path to import from tree module
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # Global variables to store loaded model and data
 model = None
 df = None
 player_name_map = None
+
+def build_player_name_map():
+    """
+    Build player name mapping - you'll need to implement this
+    or copy from your tree/random_forest.py file
+    """
+    # For now, return a basic mapping - replace with your actual implementation
+    # You might need to load this from a file or recreate the logic here
+    try:
+        # Try to load from a saved file if you have one
+        # Or recreate the mapping logic from your original code
+        
+        # Placeholder - replace with your actual player mapping
+        return {
+            'Novak Djokovic': 1,
+            'Carlos Alcaraz': 2,
+            'Jannik Sinner': 3,
+            'Daniil Medvedev': 4,
+            'Alexander Zverev': 5,
+            'Andrey Rublev': 6,
+            'Stefanos Tsitsipas': 7,
+            'Holger Rune': 8,
+            'Casper Ruud': 9,
+            'Taylor Fritz': 10,
+            'Grigor Dimitrov': 11,
+            'Tommy Paul': 12,
+            'Alex de Minaur': 13,
+            'Hubert Hurkacz': 14,
+            # Add all your players here
+        }
+    except Exception as e:
+        print(f"Error building player name map: {e}")
+        return {}
 
 def load_model_and_data():
     """Load the model and data once when the server starts"""
@@ -24,22 +54,39 @@ def load_model_and_data():
     
     try:
         # Load the model from Hugging Face
+        print("Loading model from Hugging Face...")
         model_path = hf_hub_download(
             repo_id='parthdiwane/sportly-random-forest',
             filename='rf1_bin_model.pkl'
         )
         model = joblib.load(model_path)
+        print("Model loaded successfully!")
         
-        # Load the CSV data
-        # Adjust the path according to your project structure
-        csv_path = '../stats/singles_net_stats/singles_net_stats2.csv'
-        df = pd.read_csv(csv_path)
+        # For deployment, you'll need to either:
+        # 1. Upload your CSV to Hugging Face and download it
+        # 2. Include it in your deployment
+        # 3. Use a database
         
-        # Import and build player name map
-        from tree.random_forest import build_player_name_map
+        # Option 1: Try to download CSV from Hugging Face (if you upload it)
+        try:
+            csv_path = hf_hub_download(
+                repo_id='parthdiwane/sportly-random-forest',
+                filename='singles_net_stats2.csv'
+            )
+            df = pd.read_csv(csv_path)
+            print("CSV loaded from Hugging Face!")
+        except:
+            # Option 2: Create sample data for now
+            print("Using sample data - replace with actual data")
+            df = pd.DataFrame({
+                'p1': [1, 2, 3, 4, 5] * 100,  # Sample data
+                # Add your actual feature columns here
+            })
+        
+        # Build player name map
         player_name_map = build_player_name_map()
+        print(f"Player name map loaded with {len(player_name_map)} players")
         
-        print("Model and data loaded successfully!")
         return True
         
     except Exception as e:
@@ -49,6 +96,9 @@ def load_model_and_data():
 def find_winner(p1: str, p2: str):
     """Find the winner between two players using the trained model"""
     try:
+        if not hasattr(model, 'feature_names_in_'):
+            return None, "Model not properly loaded"
+            
         trained_feature_names = model.feature_names_in_
         
         # Get player numbers from the name map
@@ -137,12 +187,25 @@ def get_players():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'model_loaded': model is not None})
+    return jsonify({
+        'status': 'healthy', 
+        'model_loaded': model is not None,
+        'players_loaded': len(player_name_map) if player_name_map else 0
+    })
+
+@app.route('/', methods=['GET'])
+def home():
+    """Home endpoint"""
+    return jsonify({
+        'message': 'Tennis Predictor API is running!',
+        'endpoints': ['/predict', '/players', '/health']
+    })
 
 if __name__ == '__main__':
     print("Loading model and data...")
     if load_model_and_data():
-        print("Starting Flask server on port 5001...")
-        app.run(debug=True, host='0.0.0.0', port=5001)
+        print("Starting Flask server...")
+        port = int(os.environ.get('PORT', 5001))
+        app.run(debug=False, host='0.0.0.0', port=port)
     else:
         print("Failed to load model and data. Exiting.")

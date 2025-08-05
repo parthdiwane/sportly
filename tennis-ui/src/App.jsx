@@ -10,8 +10,10 @@ export default function TennisPredictor() {
   const [availablePlayers, setAvailablePlayers] = useState([]);
   const [playersLoading, setPlayersLoading] = useState(true);
 
-  // API base URL - adjust this to match your Flask server
-  const API_BASE_URL = 'http://localhost:5001';
+  // API base URL - Replace with your Railway URL after deployment
+  const API_BASE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://your-app-name.railway.app'  // Replace with your actual Railway URL
+    : 'http://localhost:5001';
 
   // Sample tennis players as fallback - you can replace with your actual data
   const fallbackPlayers = [
@@ -112,7 +114,7 @@ export default function TennisPredictor() {
             <Trophy className="h-8 w-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">Match Point</h1>
           </div>
-          <p className="text-gray-600 mt-1">Calculated Wins. Every. Time.</p>
+          <p className="text-gray-600 mt-1">Calculated Wins. Every. Time</p>
         </div>
       </header>
 
@@ -253,7 +255,7 @@ export default function TennisPredictor() {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <User className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">About the Author/Model</h2>
+            <h2 className="text-xl font-semibold text-gray-900">About the Author</h2>
           </div>
 
           <div className="prose max-w-none text-gray-600">
@@ -307,7 +309,7 @@ export default function TennisPredictor() {
           
           <div className="flex justify-center items-center gap-6">
             <a 
-              href="https://github.com/yourghubusername" 
+              href="https://github.com/parthdiwane" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
@@ -318,7 +320,7 @@ export default function TennisPredictor() {
             </a>
 
             <a 
-              href="https://linkedin.com/in/yourlinkedinusername" 
+              href="https://www.linkedin.com/in/parth-diwane-497793254/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
@@ -329,7 +331,7 @@ export default function TennisPredictor() {
             </a>
 
             <a 
-              href="mailto:your.email@example.com" 
+              href="mailto:parthdiwane@ucsb.edu" 
               className="flex items-center justify-center w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
             >
               <svg className="w-6 h-6 text-blue-600 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,7 +346,7 @@ export default function TennisPredictor() {
       <footer className="bg-white border-t mt-12">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="text-center text-gray-500 text-sm">
-            <p>© 2025 Match Point</p>
+            <p>© 2025 Match Point.</p>
             <p className="mt-1">Predictions are for <b>entertainment purposes only</b> and should not be used for betting.</p>
           </div>
         </div>
